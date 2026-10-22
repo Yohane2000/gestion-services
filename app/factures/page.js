@@ -134,6 +134,10 @@ export default function Factures() {
           <div>Payé : {fcfa(f.paye)} · Reste : {fcfa(f.montant - f.paye)}</div>
           <div style={{ color: couleur[f.statut], fontWeight: "bold" }}>{f.statut}</div>
           {f.date_echeance && <div><small>Échéance : {new Date(f.date_echeance).toLocaleDateString("fr-FR")}</small></div>}
+                    <div style={{ marginTop: 8 }}>
+            <a href={`/factures/${f.id}`}>🖨️ Voir / imprimer</a>
+          </div>
+
           {f.statut !== "payee" && (
             <button onClick={() => paiement(f)} style={{ marginTop: 8, marginRight: 8 }}>
               Enregistrer un paiement
