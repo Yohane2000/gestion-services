@@ -23,7 +23,9 @@ export default function Home() {
     <main>
       <h1>Gestion Services</h1>
       <p>Connecté : {user.email}</p>
+            <p><a href="/clients">👥 Clients</a></p>
       <button onClick={deconnexion}>Se déconnecter</button>
+
     </main>
   );
 }
