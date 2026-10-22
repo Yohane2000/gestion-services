@@ -84,6 +84,8 @@ export default function Reservations() {
   }
 
   const champ = { display: "block", width: "100%", padding: 10, marginBottom: 10, fontSize: 16, boxSizing: "border-box" };
+  const champDate = { ...champ, WebkitAppearance: "none", appearance: "none", minWidth: 0, maxWidth: "100%", height: 44, border: "1px solid #ddd", borderRadius: 6 };
+
   const formatDate = (d) =>
     d ? new Date(d).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" }) : "";
 
@@ -116,7 +118,7 @@ export default function Reservations() {
       <label>Début</label>
       <input style={champ} type="datetime-local" value={debut} onChange={(e) => setDebut(e.target.value)} />
       <label>Fin (optionnel)</label>
-      <input style={champ} type="datetime-local" value={fin} onChange={(e) => setFin(e.target.value)} />
+      <input style={champDate} type="datetime-local" value={fin} onChange={(e) => setFin(e.target.value)} />
       <input style={champ} placeholder="Adresse de la prestation" value={adresse} onChange={(e) => setAdresse(e.target.value)} />
       <button style={{ ...champ, background: "#111", color: "#fff" }} onClick={ajouter}>
         Réserver
