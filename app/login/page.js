@@ -13,8 +13,8 @@ export default function Login() {
       email,
       password,
     });
-    if (error) setErreur("Email ou mot de passe incorrect.");
-    else window.location.href = "/";
+    if (error) setErreur(error.message);
+     else window.location.href = "/";
   }
 
   const champ = { display: "block", width: "100%", padding: 10, marginBottom: 12, fontSize: 16, boxSizing: "border-box" };
