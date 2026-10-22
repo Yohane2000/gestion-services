@@ -28,6 +28,7 @@ export default function Home() {
                   <p><a href="/services">🧹 Services</a></p>
                   <p><a href="/employes">👷 Employés</a></p>
                   <p><a href="/reservations">📅 Réservations</a></p>
+                  <p><a href="/factures">🧾 Factures</a></p>
 
       <button onClick={deconnexion}>Se déconnecter</button>
 
