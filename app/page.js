@@ -21,10 +21,13 @@ export default function Home() {
 
   return (
     <main>
+  
       <h1>Gestion Services</h1>
       <p>Connecté : {user.email}</p>
                   <p><a href="/clients">👥 Clients</a></p>
                   <p><a href="/services">🧹 Services</a></p>
+                  <p><a href="/employes">👷 Employés</a></p>
+                  <p><a href="/reservations">📅 Réservations</a></p>
 
       <button onClick={deconnexion}>Se déconnecter</button>
 
