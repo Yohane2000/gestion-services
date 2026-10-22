@@ -116,7 +116,7 @@ export default function Reservations() {
         ))}
       </select>
       <label>Début</label>
-      <input style={champ} type="datetime-local" value={debut} onChange={(e) => setDebut(e.target.value)} />
+      <input style={champDate} type="datetime-local" value={debut} onChange={(e) => setDebut(e.target.value)} />
       <label>Fin (optionnel)</label>
       <input style={champDate} type="datetime-local" value={fin} onChange={(e) => setFin(e.target.value)} />
       <input style={champ} placeholder="Adresse de la prestation" value={adresse} onChange={(e) => setAdresse(e.target.value)} />
