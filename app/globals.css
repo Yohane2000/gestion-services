@@ -221,7 +221,7 @@ main div[style*="border-radius"]:nth-of-type(5) { animation-delay: .2s; }
 .badge { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; font-size: 19px; margin-bottom: 6px; }
 .b1 { background: #e0e7ff; } .b2 { background: #fce7f3; } .b3 { background: #fef3c7; } .b4 { background: #ffe4e6; }
 
-.quick { display: flex; gap: 8px; margin-top: 16px; overflow-x: auto; padding-bottom: 4px; }
+.quick { display: flex; gap: 8px; margin: 16px -16px -6px; padding: 4px 16px 18px; overflow-x: auto; }
 .pill {
   white-space: nowrap;
   background: var(--card);
