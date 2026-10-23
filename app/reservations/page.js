@@ -76,6 +76,11 @@ export default function Reservations() {
       !confirm("Marquer comme terminée ? Cette action est irréversible.")
     )
       return;
+    if (
+      statut === "annule" &&
+      !confirm("Annuler cette réservation ? Cette action est irréversible.")
+    )
+      return;
     const { error } = await supabase.from("reservations").update({ statut }).eq("id", id);
     if (error) setErreur(error.message);
     else charger();
@@ -138,9 +143,15 @@ export default function Reservations() {
           <div>👤 {r.employes?.nom || "Non affecté"}</div>
           <div>📍 {r.adresse}</div>
 
-          {r.statut === "termine" ? (
-            <div style={{ marginTop: 8, fontWeight: 600, color: "green" }}>
-              ✅ Terminée (verrouillée)
+          {r.statut === "termine" || r.statut === "annule" ? (
+            <div
+              style={{
+                marginTop: 8,
+                fontWeight: 600,
+                color: r.statut === "termine" ? "green" : "#c00",
+              }}
+            >
+              {r.statut === "termine" ? "✅ Terminée (verrouillée)" : "❌ Annulée (verrouillée)"}
             </div>
           ) : (
             <>
