@@ -47,7 +47,7 @@ export default function Home() {
         .from("reservations")
         .select("id, date_debut, statut, clients(nom), services(nom), employes(nom)")
         .gte("date_debut", debutJour.toISOString())
-        .neq("statut", "annule")
+        .in("statut", ["confirme", "en_cours"])
         .order("date_debut")
         .limit(6),
     ]);
