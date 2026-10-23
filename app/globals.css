@@ -54,7 +54,8 @@ h3 {
   font-weight: 700;
   margin: 26px 0 12px;
 }
-.date { margin: 0; color: var(--muted); font-size: 14px; font-weight: 500; text-transform: capitalize; }
+.date { margin: 0; color: var(--muted); font-size: 14px; font-weight: 500;  }
+.date::first-letter { text-transform: uppercase; }
 label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin: 4px 0 6px; }
 small { color: var(--muted); }
 
