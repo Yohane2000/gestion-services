@@ -1,23 +1,25 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "../lib/supabase";
 
-function Carte({ titre, valeur, couleur }) {
-  return (
-    <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12 }}>
-      <div style={{ fontSize: 13, color: "#666" }}>{titre}</div>
-      <div style={{ fontSize: 22, fontWeight: "bold", color: couleur || "#111" }}>{valeur}</div>
-    </div>
-  );
+function Compteur({ valeur, suffixe = "" }) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    let debut;
+    let raf;
+    const duree = 900;
+    function pas(t) {
+      if (!debut) debut = t;
+      const p = Math.min((t - debut) / duree, 1);
+      setN(Math.round(valeur * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) raf = requestAnimationFrame(pas);
+    }
+    raf = requestAnimationFrame(pas);
+    return () => cancelAnimationFrame(raf);
+  }, [valeur]);
+  return <>{n.toLocaleString("fr-FR")}{suffixe}</>;
 }
-
-const LIENS = [
-  ["/clients", "👥 Clients"],
-  ["/services", "🧹 Services"],
-  ["/employes", "👷 Employés"],
-  ["/reservations", "📅 Réservations"],
-  ["/factures", "🧾 Factures"],
-];
 
 export default function Home() {
   const [user, setUser] = useState(null);
@@ -55,11 +57,14 @@ export default function Home() {
 
     const fs = factures.data || [];
     const impayees = fs.filter((f) => f.statut !== "payee");
+    const reste = fs.reduce((t, f) => t + (f.montant - f.paye), 0);
+    const encaisse = fs.reduce((t, f) => t + f.paye, 0);
     setStats({
       clients: clients.count || 0,
       aujourdhui: aujourdhui.count || 0,
-      reste: fs.reduce((t, f) => t + (f.montant - f.paye), 0),
-      encaisse: fs.reduce((t, f) => t + f.paye, 0),
+      reste,
+      encaisse,
+      facture: reste + encaisse,
       nbImpayees: impayees.length,
       enRetard: impayees.filter((f) => f.date_echeance && f.date_echeance < jourStr).length,
     });
@@ -81,48 +86,88 @@ export default function Home() {
     window.location.href = "/login";
   }
 
+  const h = new Date().getHours();
+  const salut = h < 12 ? "Bonjour" : h < 18 ? "Bon après-midi" : "Bonsoir";
+  const dateJour = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
   const fcfa = (n) => (n || 0).toLocaleString("fr-FR") + " FCFA";
-  const formatDate = (d) =>
-    new Date(d).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
+  const pct = stats && stats.facture > 0 ? Math.round((stats.encaisse / stats.facture) * 100) : 0;
 
-  if (!user) return <p>Chargement...</p>;
+  if (!user) return <p>Chargement…</p>;
 
   return (
-    <main style={{ maxWidth: 500, margin: "0 auto" }}>
-      <h1 style={{ marginBottom: 4 }}>Tableau de bord</h1>
-      <small style={{ color: "#666" }}>{user.email}</small>
-      {erreur && <p style={{ color: "red" }}>{erreur}</p>}
+    <main>
+      <p className="date">{dateJour}</p>
+      <h1>{salut} 👋</h1>
+      {erreur && <p className="erreur">{erreur}</p>}
 
       {stats && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 16 }}>
-          <Carte titre="Réservations aujourd'hui" valeur={stats.aujourdhui} />
-          <Carte titre="Clients" valeur={stats.clients} />
-          <Carte titre="Reste à encaisser" valeur={fcfa(stats.reste)} couleur="#c00" />
-          <Carte titre="Total encaissé" valeur={fcfa(stats.encaisse)} couleur="green" />
-          <Carte titre="Factures impayées" valeur={stats.nbImpayees} couleur="orange" />
-          <Carte titre="En retard" valeur={stats.enRetard} couleur={stats.enRetard ? "#c00" : "#111"} />
-        </div>
+        <>
+          <section className="hero">
+            <div className="hero-label">Reste à encaisser</div>
+            <div className="hero-value">
+              <Compteur valeur={stats.reste} suffixe=" FCFA" />
+            </div>
+            <div className="bar"><i style={{ width: pct + "%" }} /></div>
+            <div className="hero-sub">
+              {pct} % encaissé · {fcfa(stats.encaisse)} sur {fcfa(stats.facture)}
+            </div>
+          </section>
+
+          <div className="grid2">
+            <div className="tile">
+              <span className="badge b1">📅</span>
+              <b><Compteur valeur={stats.aujourdhui} /></b>
+              <small>Réservations aujourd'hui</small>
+            </div>
+            <div className="tile" style={{ animationDelay: ".06s" }}>
+              <span className="badge b2">👥</span>
+              <b><Compteur valeur={stats.clients} /></b>
+              <small>Clients</small>
+            </div>
+            <div className="tile" style={{ animationDelay: ".12s" }}>
+              <span className="badge b3">⏳</span>
+              <b><Compteur valeur={stats.nbImpayees} /></b>
+              <small>Factures impayées</small>
+            </div>
+            <div className="tile" style={{ animationDelay: ".18s" }}>
+              <span className="badge b4">⚠️</span>
+              <b><Compteur valeur={stats.enRetard} /></b>
+              <small>En retard</small>
+            </div>
+          </div>
+        </>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 20 }}>
-        {LIENS.map(([href, label]) => (
-          <a key={href} href={href} style={{ background: "#111", color: "#fff", textAlign: "center", padding: 14, borderRadius: 10, textDecoration: "none", fontSize: 16 }}>
-            {label}
-          </a>
-        ))}
+      <div className="quick">
+        <Link href="/reservations" className="pill">＋ Réservation</Link>
+        <Link href="/clients" className="pill">＋ Client</Link>
+        <Link href="/factures" className="pill">＋ Facture</Link>
       </div>
 
-      <h3 style={{ marginTop: 24 }}>Prochaines réservations</h3>
-      {prochaines.length === 0 && <p>Aucune réservation à venir.</p>}
-      {prochaines.map((r) => (
-        <div key={r.id} style={{ border: "1px solid #ddd", borderRadius: 8, padding: 10, marginBottom: 8 }}>
-          <strong>{r.clients?.nom}</strong> · {r.services?.nom}
-          <div>{formatDate(r.date_debut)}</div>
-          <div>👤 {r.employes?.nom || "Non affecté"} · {r.statut}</div>
-        </div>
-      ))}
+      <h3>Prochaines réservations</h3>
+      {prochaines.length === 0 && <p className="vide">Aucune réservation à venir.</p>}
+      {prochaines.map((r, i) => {
+        const d = new Date(r.date_debut);
+        return (
+          <div key={r.id} className="res" style={{ animationDelay: i * 60 + "ms" }}>
+            <div className="date-badge">
+              <b>{d.getDate()}</b>
+              <span>{d.toLocaleDateString("fr-FR", { month: "short" })}</span>
+            </div>
+            <div className="res-info">
+              <strong>{r.clients?.nom}</strong>
+              <div>{r.services?.nom}</div>
+              <small>
+                🕐 {d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · 👤{" "}
+                {r.employes?.nom || "Non affecté"}
+              </small>
+            </div>
+            <span className={"chip " + r.statut}>{r.statut.replace("_", " ")}</span>
+          </div>
+        );
+      })}
 
-      <button onClick={deconnexion} style={{ marginTop: 20 }}>Se déconnecter</button>
+      <button className="out" onClick={deconnexion}>Se déconnecter</button>
     </main>
   );
 }
