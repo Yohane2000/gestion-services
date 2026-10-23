@@ -4,9 +4,9 @@ import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
 const ENTREPRISE = {
-  nom: "NOM DE L'ENTREPRISE",
-  adresse: "Adresse, Dakar",
-  telephone: "+221 00 000 00 00",
+  nom: "CleanService",
+  adresse: "Tchimbamba",
+  telephone: "+242 00 000 00 00",
 };
 
 export default function Facture() {
