@@ -70,11 +70,17 @@ export default function Reservations() {
     charger();
   }
 
-  async function changerStatut(id, statut) {
+    async function changerStatut(id, statut) {
+    if (
+      statut === "termine" &&
+      !confirm("Marquer comme terminée ? Cette action est irréversible.")
+    )
+      return;
     const { error } = await supabase.from("reservations").update({ statut }).eq("id", id);
     if (error) setErreur(error.message);
     else charger();
   }
+
 
   async function supprimer(id) {
     if (!confirm("Supprimer cette réservation ?")) return;
