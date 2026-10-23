@@ -70,7 +70,7 @@ export default function Reservations() {
     charger();
   }
 
-    async function changerStatut(id, statut) {
+  async function changerStatut(id, statut) {
     if (
       statut === "termine" &&
       !confirm("Marquer comme terminée ? Cette action est irréversible.")
@@ -80,7 +80,6 @@ export default function Reservations() {
     if (error) setErreur(error.message);
     else charger();
   }
-
 
   async function supprimer(id) {
     if (!confirm("Supprimer cette réservation ?")) return;
@@ -138,15 +137,27 @@ export default function Reservations() {
           <div>{formatDate(r.date_debut)}{r.date_fin ? " → " + formatDate(r.date_fin) : ""}</div>
           <div>👤 {r.employes?.nom || "Non affecté"}</div>
           <div>📍 {r.adresse}</div>
-          <select value={r.statut} onChange={(e) => changerStatut(r.id, e.target.value)} style={{ marginTop: 8, marginRight: 8, fontSize: 16 }}>
-            {STATUTS.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-          <button onClick={() => supprimer(r.id)}>Supprimer</button>
+
+          {r.statut === "termine" ? (
+            <div style={{ marginTop: 8, fontWeight: 600, color: "green" }}>
+              ✅ Terminée (verrouillée)
+            </div>
+          ) : (
+            <>
+              <select
+                value={r.statut}
+                onChange={(e) => changerStatut(r.id, e.target.value)}
+                style={{ marginTop: 8, marginRight: 8, fontSize: 16 }}
+              >
+                {STATUTS.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+              <button onClick={() => supprimer(r.id)}>Supprimer</button>
+            </>
+          )}
         </div>
       ))}
     </main>
   );
 }
-
