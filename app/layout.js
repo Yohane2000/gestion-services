@@ -1,10 +1,27 @@
-export const metadata = { title: "Gestion Services" };
+import "./globals.css";
+import { Inter } from "next/font/google";
+import Nav from "./Nav";
+
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata = {
+  title: "Gestion Services",
+  description: "Clients, réservations et factures",
+  appleWebApp: { capable: true, title: "Gestion", statusBarStyle: "default" },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#4f46e5",
+};
 
 export default function RootLayout({ children }) {
   return (
     <html lang="fr">
-      <body style={{ fontFamily: "sans-serif", margin: 0, padding: 16 }}>
+      <body className={inter.className}>
         {children}
+        <Nav />
       </body>
     </html>
   );
