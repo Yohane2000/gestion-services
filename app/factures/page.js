@@ -2,6 +2,18 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
+// À personnaliser
+const NOM_ENTREPRISE = "NOM DE L'ENTREPRISE";
+const INDICATIF = "221"; // indicatif pays ajouté aux numéros à 9 chiffres
+
+function numeroWhatsApp(tel) {
+  let n = (tel || "").replace(/\D/g, "");
+  if (!n) return "";
+  if (n.startsWith("00")) return n.slice(2);
+  if (n.startsWith("0")) n = n.slice(1);
+  return n.length <= 9 ? INDICATIF + n : n;
+}
+
 export default function Factures() {
   const [factures, setFactures] = useState([]);
   const [reservations, setReservations] = useState([]);
@@ -9,13 +21,14 @@ export default function Factures() {
   const [reservationId, setReservationId] = useState("");
   const [montant, setMontant] = useState("");
   const [echeance, setEcheance] = useState("");
+  const [filtre, setFiltre] = useState("toutes");
   const [erreur, setErreur] = useState("");
 
   async function charger() {
     const [f, r] = await Promise.all([
       supabase
         .from("factures")
-        .select("*, clients(nom), reservations(services(nom))")
+        .select("*, clients(nom, telephone), reservations(services(nom))")
         .order("date_emission", { ascending: false }),
       supabase
         .from("reservations")
@@ -85,6 +98,15 @@ export default function Factures() {
     else charger();
   }
 
+  async function marquerRelance(id) {
+    const { error } = await supabase
+      .from("factures")
+      .update({ derniere_relance: new Date().toISOString() })
+      .eq("id", id);
+    if (error) setErreur(error.message);
+    else charger();
+  }
+
   async function supprimer(id) {
     if (!confirm("Supprimer cette facture ?")) return;
     const { error } = await supabase.from("factures").delete().eq("id", id);
@@ -95,6 +117,21 @@ export default function Factures() {
   const champ = { display: "block", width: "100%", padding: 10, marginBottom: 10, fontSize: 16, boxSizing: "border-box" };
   const couleur = { payee: "green", partielle: "orange", impayee: "red" };
   const fcfa = (n) => (n || 0).toLocaleString("fr-FR") + " FCFA";
+  const dateFr = (d) => new Date(d).toLocaleDateString("fr-FR");
+  const jourStr = new Date().toLocaleDateString("sv-SE");
+  const enRetard = (f) => f.statut !== "payee" && f.date_echeance && f.date_echeance < jourStr;
+  const visibles = filtre === "impayees" ? factures.filter((f) => f.statut !== "payee") : factures;
+
+  function lienWhatsApp(f) {
+    const reste = f.montant - f.paye;
+    const ech = f.date_echeance ? ` (échéance : ${dateFr(f.date_echeance)})` : "";
+    const message =
+      `Bonjour ${f.clients?.nom},\n\n` +
+      `Petit rappel concernant la facture ${f.numero} : il reste ${fcfa(reste)} à régler${ech}.\n\n` +
+      `Merci de bien vouloir procéder au règlement. N'hésitez pas à nous contacter pour toute question.\n\n` +
+      `Cordialement,\n${NOM_ENTREPRISE}`;
+    return `https://wa.me/${numeroWhatsApp(f.clients?.telephone)}?text=${encodeURIComponent(message)}`;
+  }
 
   if (!pret) return <p>Chargement...</p>;
 
@@ -125,27 +162,55 @@ export default function Factures() {
       </button>
       {erreur && <p style={{ color: "red" }}>{erreur}</p>}
 
-      <h3>Liste ({factures.length})</h3>
-      {factures.map((f) => (
-        <div key={f.id} style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12, marginBottom: 10 }}>
-          <strong>{f.numero}</strong> · {f.clients?.nom}
-          <div><small>{f.reservations?.services?.nom}</small></div>
-          <div>Total : {fcfa(f.montant)}</div>
-          <div>Payé : {fcfa(f.paye)} · Reste : {fcfa(f.montant - f.paye)}</div>
-          <div style={{ color: couleur[f.statut], fontWeight: "bold" }}>{f.statut}</div>
-          {f.date_echeance && <div><small>Échéance : {new Date(f.date_echeance).toLocaleDateString("fr-FR")}</small></div>}
-                    <div style={{ marginTop: 8 }}>
-            <a href={`/factures/${f.id}`}>🖨️ Voir / imprimer</a>
-          </div>
+      <h3>Liste ({visibles.length})</h3>
+      <select value={filtre} onChange={(e) => setFiltre(e.target.value)} style={{ marginBottom: 12 }}>
+        <option value="toutes">Toutes les factures</option>
+        <option value="impayees">À relancer (impayées)</option>
+      </select>
 
-          {f.statut !== "payee" && (
-            <button onClick={() => paiement(f)} style={{ marginTop: 8, marginRight: 8 }}>
-              Enregistrer un paiement
-            </button>
-          )}
-          <button onClick={() => supprimer(f.id)} style={{ marginTop: 8 }}>Supprimer</button>
-        </div>
-      ))}
+      {visibles.map((f) => {
+        const tel = numeroWhatsApp(f.clients?.telephone);
+        return (
+          <div key={f.id} style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12, marginBottom: 10 }}>
+            <strong>{f.numero}</strong> · {f.clients?.nom}
+            <div><small>{f.reservations?.services?.nom}</small></div>
+            <div>Total : {fcfa(f.montant)}</div>
+            <div>Payé : {fcfa(f.paye)} · Reste : {fcfa(f.montant - f.paye)}</div>
+            <div style={{ color: couleur[f.statut], fontWeight: "bold" }}>{f.statut}</div>
+            {f.date_echeance && <div><small>Échéance : {dateFr(f.date_echeance)}</small></div>}
+            {enRetard(f) && <div style={{ color: "#c00", fontWeight: 600 }}>⚠️ En retard</div>}
+            {f.derniere_relance && <div><small>Dernière relance : {dateFr(f.derniere_relance)}</small></div>}
+
+            <div style={{ marginTop: 8 }}>
+              <a href={`/factures/${f.id}`}>🖨️ Voir / imprimer</a>
+            </div>
+
+            {f.statut !== "payee" &&
+              (tel ? (
+                <div style={{ marginTop: 10 }}>
+                  <a
+                    href={lienWhatsApp(f)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => marquerRelance(f.id)}
+                    style={{ display: "inline-block", background: "#25D366", color: "#fff", padding: "10px 15px", borderRadius: 11 }}
+                  >
+                    💬 Relancer sur WhatsApp
+                  </a>
+                </div>
+              ) : (
+                <div style={{ marginTop: 8 }}><small>📵 Pas de numéro pour ce client</small></div>
+              ))}
+
+            {f.statut !== "payee" && (
+              <button onClick={() => paiement(f)} style={{ marginTop: 8, marginRight: 8 }}>
+                Enregistrer un paiement
+              </button>
+            )}
+            <button onClick={() => supprimer(f.id)} style={{ marginTop: 8 }}>Supprimer</button>
+          </div>
+        );
+      })}
     </main>
   );
 }
